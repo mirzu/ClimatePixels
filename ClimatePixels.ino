@@ -2,7 +2,10 @@
 #include <TCL.h>
 
 int potValue = 0;        // value read from the pot
-
+int windValue = 0;
+int wait = 512;
+const int analog1 = A4;
+const int analog2 = A5;
 const int LEDS = 25;
 const int COLORS = 7;
 const int BLACK = 0;
@@ -71,7 +74,7 @@ void setup() {
     currentFrame[currentLED][0] =   color_values[BLUE][0];
     currentFrame[currentLED][1] =   color_values[BLUE][1];
     currentFrame[currentLED][2] =   color_values[BLUE][2];
-  update_strand();
+    update_strand();
 }
   
   
@@ -82,11 +85,17 @@ void loop() {
   
   time=millis();
   
-  potValue= analogRead(TCL_POT1);
+  potValue = analogRead(TCL_POT3);
+  windValue = analogRead(analog2);
+  windValue = map(windValue, 1, 1023, 1, 512);
+  wait = 512;
+  wait = wait - constrain(windValue + potValue/2, 1, 512 );//potValue;//windValue + potValue;//gain(windValue, TCL_POT3);
   
   if(change_time<time) {
-    change_time = time + (potValue/2);
-     float colorNumber = colorCounter > numColors ? colorCounter - numColors: colorCounter;
+    
+    change_time = time + wait;
+
+    float colorNumber = colorCounter > numColors ? colorCounter - numColors: colorCounter;
     
     // Play with the saturation and brightness values
     // to see what they do
@@ -123,7 +132,6 @@ void loop() {
   }
   
   update_strand();
-  // print the results to the serial monitor:
 }
 
 void update_strand() {
@@ -135,6 +143,17 @@ void update_strand() {
     TCL.sendColor(currentFrame[i][0],currentFrame[i][1],currentFrame[i][2]);
   }
   TCL.sendEmptyFrame();
+}
+
+int gain(int analogInput, int potValue) {
+  int returnValue;
+  
+  returnValue = analogInput + potValue;
+  
+  if (returnValue > 1024) {
+    returnValue = 1024;
+  }
+  return returnValue;
 }
 
 long HSBtoRGB(float _hue, float _sat, float _brightness) {
